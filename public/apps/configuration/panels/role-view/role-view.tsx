@@ -35,7 +35,7 @@ import {
   EuiHorizontalRule,
   EuiButtonEmpty,
 } from '@elastic/eui';
-import { difference } from 'lodash';
+import { difference, find } from 'lodash';
 import { BreadcrumbsPageDependencies } from '../../../types';
 import { buildHashUrl, buildUrl } from '../../utils/url-builder';
 import {
@@ -59,11 +59,12 @@ import { createUnknownErrorToast, useToastState } from '../../utils/toast-utils'
 import { fetchActionGroups } from '../../utils/action-groups-utils';
 import { getRoleDetail } from '../../utils/role-detail-utils';
 import { ClusterPermissionPanel } from '../role-view/cluster-permission-panel';
+import { AppsPermissionPanel } from './apps-permission-panel';
 import { IndexPermissionPanel } from './index-permission-panel';
 import { TenantsPanel } from './tenants-panel';
 import { transformRoleIndexPermissions } from '../../utils/index-permission-utils';
 import { transformRoleTenantPermissions } from '../../utils/tenant-utils';
-import { DocLinks } from '../../constants';
+import { DocLinks, APPS_PERMISSIONS } from '../../constants';
 import { useDeleteConfirmState } from '../../utils/delete-confirm-modal-utils';
 import { ExternalLink, ExternalLinkButton } from '../../utils/display-utils';
 import { showTableStatusMessage } from '../../utils/loading-spinner-utils';
@@ -90,6 +91,11 @@ const mappedUserColumns = [
   },
 ];
 
+function appsPermsValueToLabel(option: string): string {
+  const { label }: any = find(APPS_PERMISSIONS, ['value', option]) || { label: option };
+  return label;
+}
+
 export function RoleView(props: RoleViewProps) {
   const duplicateRoleLink = buildHashUrl(ResourceType.roles, Action.duplicate, props.roleName);
 
@@ -98,6 +104,7 @@ export function RoleView(props: RoleViewProps) {
   const [selection, setSelection] = useState<MappedUsersListing[]>([]);
   const [hosts, setHosts] = React.useState<string[]>([]);
   const [actionGroupDict, setActionGroupDict] = React.useState<DataObject<ActionGroupItem>>({});
+  const [roleAppsPermission, setRoleAppsPermission] = useState<string[]>([]);
   const [roleClusterPermission, setRoleClusterPermission] = useState<string[]>([]);
   const [roleIndexPermission, setRoleIndexPermission] = React.useState<RoleIndexPermissionView[]>(
     []
@@ -126,6 +133,7 @@ export function RoleView(props: RoleViewProps) {
         setActionGroupDict(actionGroups);
         const roleData = await getRoleDetail(props.coreStart.http, props.roleName);
         setIsReserved(roleData.reserved);
+        setRoleAppsPermission(roleData.apps_permissions.map(appsPermsValueToLabel));
         setRoleClusterPermission(roleData.cluster_permissions);
         setRoleIndexPermission(transformRoleIndexPermissions(roleData.index_permissions));
         setRoleTenantPermission(transformRoleTenantPermissions(roleData.tenant_permissions));
@@ -232,6 +240,16 @@ export function RoleView(props: RoleViewProps) {
               </p>
             </EuiCallOut>
           )}
+
+          <EuiSpacer size="m" />
+
+          <AppsPermissionPanel
+            roleName={props.roleName}
+            appsPermissions={roleAppsPermission}
+            actionGroups={actionGroupDict}
+            loading={loading}
+            isReserved={isReserved}
+          />
 
           <EuiSpacer size="m" />
 

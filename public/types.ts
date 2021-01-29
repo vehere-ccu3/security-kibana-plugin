@@ -65,6 +65,9 @@ export interface ClientConfigType {
   indexPermissions: {
     include: string[];
   };
+  appPermissions: {
+    include: object[];
+  };
   disabledTransportCategories: {
     exclude: string[];
   };

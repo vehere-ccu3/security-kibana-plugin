@@ -89,6 +89,7 @@ export interface RoleTenantPermissionView extends RoleTenantPatterns {
 }
 
 export interface RoleUpdate {
+  apps_permissions: string[];
   cluster_permissions: string[];
   index_permissions: RoleIndexPermission[];
   tenant_permissions: RoleTenantPermission[];

@@ -23,17 +23,19 @@ import {
   EuiSpacer,
   EuiText,
   EuiTitle,
+  EuiComboBoxOptionOption
 } from '@elastic/eui';
 import React, { useState } from 'react';
-import { isEmpty } from 'lodash';
+import { isEmpty, concat, find } from 'lodash';
 import { BreadcrumbsPageDependencies } from '../../../types';
-import { CLUSTER_PERMISSIONS, DocLinks, INDEX_PERMISSIONS } from '../../constants';
+import { APPS_PERMISSIONS, CLUSTER_PERMISSIONS, DocLinks, INDEX_PERMISSIONS } from '../../constants';
 import { fetchActionGroups } from '../../utils/action-groups-utils';
 import { comboBoxOptionToString, stringToComboBoxOption } from '../../utils/combo-box-utils';
 import { PanelWithHeader } from '../../utils/panel-with-header';
 import { getRoleDetail, updateRole } from '../../utils/role-detail-utils';
 import { fetchTenantNameList } from '../../utils/tenant-utils';
 import { ClusterPermissionPanel } from './cluster-permission-panel';
+import { AppsPermissionPanel } from './apps-permission-panel';
 import {
   buildIndexPermissionState,
   IndexPermissionPanel,
@@ -71,8 +73,18 @@ const TITLE_TEXT_DICT = {
   duplicate: 'Duplicate Role',
 };
 
+function stringToAppsPermsComboBoxOption(option: any): EuiComboBoxOptionOption {
+  const { label, value }: any = find(APPS_PERMISSIONS, ['value', option]) || { label: option, value: option };
+  return { label, value };
+}
+
+function appsPermsComboBoxOptionToString(option: EuiComboBoxOptionOption): string {
+  return option.value;
+}
+
 export function RoleEdit(props: RoleEditDeps) {
   const [roleName, setRoleName] = React.useState('');
+  const [roleAppsPermission, setRoleAppsPermission] = useState<ComboBoxOptions>([]);
   const [roleClusterPermission, setRoleClusterPermission] = useState<ComboBoxOptions>([]);
   const [roleIndexPermission, setRoleIndexPermission] = useState<RoleIndexPermissionStateClass[]>(
     []
@@ -91,6 +103,7 @@ export function RoleEdit(props: RoleEditDeps) {
       const fetchData = async () => {
         try {
           const roleData = await getRoleDetail(props.coreStart.http, props.sourceRoleName);
+          setRoleAppsPermission(roleData.apps_permissions.map(stringToAppsPermsComboBoxOption));
           setRoleClusterPermission(roleData.cluster_permissions.map(stringToComboBoxOption));
           setRoleIndexPermission(buildIndexPermissionState(roleData.index_permissions));
           setRoleTenantPermission(buildTenantPermissionState(roleData.tenant_permissions));
@@ -146,6 +159,7 @@ export function RoleEdit(props: RoleEditDeps) {
       );
 
       await updateRole(props.coreStart.http, roleName, {
+        apps_permissions: roleAppsPermission.map(appsPermsComboBoxOptionToString),
         cluster_permissions: roleClusterPermission.map(comboBoxOptionToString),
         index_permissions: unbuildIndexPermissionState(validIndexPermission),
         tenant_permissions: unbuildTenantPermissionState(validTenantPermission),
@@ -179,6 +193,8 @@ export function RoleEdit(props: RoleEditDeps) {
     },
   ];
 
+  const appsPermissionOptions = concat([{label: 'All', value: '*'}], APPS_PERMISSIONS);
+
   const tenantOptions = tenantNames.map(stringToComboBoxOption);
 
   return (
@@ -209,6 +225,12 @@ export function RoleEdit(props: RoleEditDeps) {
           />
         </EuiForm>
       </PanelWithHeader>
+      <EuiSpacer size="m" />
+      <AppsPermissionPanel
+        state={roleAppsPermission}
+        setState={setRoleAppsPermission}
+        optionUniverse={appsPermissionOptions}
+      />
       <EuiSpacer size="m" />
       <ClusterPermissionPanel
         state={roleClusterPermission}

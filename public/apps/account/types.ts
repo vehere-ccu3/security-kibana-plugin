@@ -19,6 +19,7 @@ export interface AccountInfo {
     user_requested_tenant?: string;
     backend_roles: string[];
     roles: string[];
+    apps: string[];
     tenants: {
       [tenant: string]: true;
     };

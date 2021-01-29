@@ -46,6 +46,7 @@ export function defineRoutes(router: IRouter) {
 
   const roleSchema = schema.object({
     description: schema.maybe(schema.string()),
+    apps_permissions: schema.arrayOf(schema.string(), { defaultValue: [] }),
     cluster_permissions: schema.arrayOf(schema.string(), { defaultValue: [] }),
     tenant_permissions: schema.arrayOf(schema.any(), { defaultValue: [] }),
     index_permissions: schema.arrayOf(schema.any(), { defaultValue: [] }),

@@ -12,11 +12,12 @@
  *   express or implied. See the License for the specific language governing
  *   permissions and limitations under the License.
  */
-
+import { difference, concat, map } from 'lodash';
 import { BehaviorSubject } from 'rxjs';
 import {
   AppMountParameters,
   AppStatus,
+  AppNavLinkStatus,
   AppUpdater,
   CoreSetup,
   CoreStart,
@@ -29,8 +30,10 @@ import { setupTopNavButton } from './apps/account/account-app';
 import { fetchAccountInfoSafe } from './apps/account/utils';
 import {
   API_ENDPOINT_PERMISSIONS_INFO,
+  APPS_PERMISSIONS,
   includeClusterPermissions,
   includeIndexPermissions,
+  includeAppPermissions
 } from './apps/configuration/constants';
 import {
   excludeFromDisabledRestCategories,
@@ -77,6 +80,9 @@ export class OpendistroSecurityPlugin
       (config.readonly_mode?.roles || DEFAULT_READONLY_ROLES).includes(role)
     );
 
+    const nonAccesibleApps = (accountInfo?.apps || []).includes('*') ? [] :
+      difference(map(concat(APPS_PERMISSIONS, config.appPermissions.include), 'value'), (accountInfo?.apps || []));
+
     if (apiPermission) {
       core.application.register({
         id: PLUGIN_NAME,
@@ -89,6 +95,7 @@ export class OpendistroSecurityPlugin
           // merge Kibana yml configuration
           includeClusterPermissions(config.clusterPermissions.include);
           includeIndexPermissions(config.indexPermissions.include);
+          includeAppPermissions(config.appPermissions.include);
 
           excludeFromDisabledTransportCategories(config.disabledTransportCategories.exclude);
           excludeFromDisabledRestCategories(config.disabledRestCategories.exclude);
@@ -138,6 +145,17 @@ export class OpendistroSecurityPlugin
       })
     );
 
+    core.application.registerAppUpdater(
+      new BehaviorSubject<AppUpdater>((app) => {
+        if(nonAccesibleApps.includes(app.id)) {
+          return {
+            navLinkStatus: AppNavLinkStatus.hidden,
+            status: AppStatus.inaccessible
+          };
+        }
+      })
+    );
+
     // Return methods that should be available to other plugins
     return {};
   }
@@ -155,7 +173,8 @@ export class OpendistroSecurityPlugin
             httpErrorResponse.response?.status === 401 &&
             !(
               window.location.pathname.toLowerCase().includes(LOGIN_PAGE_URI) ||
-              window.location.pathname.toLowerCase().includes(CUSTOM_ERROR_PAGE_URI)
+              window.location.pathname.toLowerCase().includes(CUSTOM_ERROR_PAGE_URI) ||
+              window.location.pathname.toLowerCase().includes('/app/license')
             )
           ) {
             if (config.auth.logout_url) {

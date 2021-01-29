@@ -182,6 +182,21 @@ export function includeIndexPermissions(indexPermissionsToInclude: string[]) {
   }
 }
 
+export const APPS_PERMISSIONS: object[] = [
+  {label: 'Overview', value: 'kibanaOverview'},
+  {label: 'Discover', value: 'discover'},
+  {label: 'Dashboards', value: 'dashboards'},
+  {label: 'Visualize', value: 'visualize'},
+  {label: 'Dev Tools', value: 'dev_tools'},
+  {label: 'Stack Management', value: 'management'}
+];
+
+export function includeAppPermissions(appsPermissionsToInclude: object[]) {
+  if (appsPermissionsToInclude) {
+    APPS_PERMISSIONS.push(...appsPermissionsToInclude);
+  }
+}
+
 export const TENANT_READ_PERMISSION = 'kibana_all_read';
 export const TENANT_WRITE_PERMISSION = 'kibana_all_write';
 

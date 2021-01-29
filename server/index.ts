@@ -29,6 +29,9 @@ export const configSchema = schema.object({
   indexPermissions: schema.object({
     include: schema.arrayOf(schema.string(), { defaultValue: [] }),
   }),
+  appPermissions: schema.object({
+    include: schema.arrayOf(schema.object({ label: schema.string(), value: schema.string() }), { defaultValue: [] }),
+  }),
   disabledTransportCategories: schema.object({
     exclude: schema.arrayOf(schema.string(), { defaultValue: [] }),
   }),
@@ -199,6 +202,7 @@ export const config: PluginConfigDescriptor<SecurityPluginConfigType> = {
     readonly_mode: true,
     clusterPermissions: true,
     indexPermissions: true,
+    appPermissions: true,
     disabledTransportCategories: true,
     disabledRestCategories: true,
   },
