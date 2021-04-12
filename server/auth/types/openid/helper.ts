@@ -45,8 +45,12 @@ export function getBaseRedirectUrl(config: SecurityPluginConfigType, core: CoreS
   return `${protocol}://${host}:${port}`;
 }
 
-export async function callTokenEndpoint(tokenEndpoint: string, query: any): Promise<TokenResponse> {
-  const tokenResponse = await wreck.post(tokenEndpoint, {
+export async function callTokenEndpoint(
+  tokenEndpoint: string,
+  query: any,
+  wreckClient: typeof wreck
+): Promise<TokenResponse> {
+  const tokenResponse = await wreckClient.post(tokenEndpoint, {
     payload: stringify(query),
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
@@ -68,6 +72,19 @@ export async function callTokenEndpoint(tokenEndpoint: string, query: any): Prom
     refreshToken: tokenPayload.refresh_token,
     expiresIn: tokenPayload.expires_in,
   };
+}
+
+export function composeLogoutUrl(
+  customLogoutUrl: string | undefined,
+  idpEndsessionEndpoint: string | undefined,
+  additionalQueryParams: any
+) {
+  const logoutEndpont = customLogoutUrl || idpEndsessionEndpoint;
+  const logoutUrl = new URL(logoutEndpont!);
+  Object.keys(additionalQueryParams).forEach((key) => {
+    logoutUrl.searchParams.append(key, additionalQueryParams[key] as string);
+  });
+  return logoutUrl.toString();
 }
 
 export interface TokenResponse {
